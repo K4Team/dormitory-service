@@ -6,7 +6,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets, status
 from rest_framework.views import Response
 from services.serializers import UserSerializer
-from rest_framework.decorators import action,api_view
+from rest_framework.decorators import action, api_view
 from services.models import SysUser
 import json
 import datetime
@@ -15,7 +15,7 @@ import uuid
 
 
 def get_request_args(func):
-    def _get_request_args(self, request, pk):
+    def _get_request_args(self, request, **kwargs):
         if request.method == 'GET':
             args = request.GET
         elif request.method == 'POST' or request.method == "PUT":
@@ -36,7 +36,7 @@ def get_request_args(func):
                     args = request.POST
                 else:
                     args = request.PUT
-        return func(self, request, args, pk)
+        return func(self, request, args, pk=kwargs['pk'] if "pk" in kwargs.keys() else None)
 
     return _get_request_args
 
@@ -88,20 +88,16 @@ class User(viewsets.ViewSet):
     )
     @transaction.atomic
     @get_request_args
-    def create(self, request, args):
+    def create(self, request, args, pk):
 
-        a = SysUser.objects.create()
-        # for i in args.keys():
         keys_list = args.keys()
-        a.id = uuid.uuid4()
-        a.name = args['name'] if 'name' in keys_list else None
-        a.title = args['title'] if 'title' in keys_list else None
-        a.mobile = args['mobile'] if 'mobile' in keys_list else None
-        a.email = args['email'] if 'email' in keys_list else None
-        a.income = args['income'] if 'income' in keys_list else None
-        a.create_date = datetime.datetime.now()
-        a.save()
-        # a.create_date = self.args['']
+        SysUser.objects.create(id=uuid.uuid4(), name=args['name'] if 'name' in keys_list else None,
+                               title=args['title'] if 'title' in keys_list else None,
+                               mobile=args['mobile'] if 'mobile' in keys_list else None,
+                               email=args['email'] if 'email' in keys_list else None,
+                               income=args['income'] if 'income' in keys_list else None,
+                               create_date=datetime.datetime.now())
+
         return Response(status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
@@ -135,14 +131,10 @@ class User(viewsets.ViewSet):
         info = UserSerializer(user)
         return Response(info.data, status=status.HTTP_200_OK)
 
-    # @swagger_auto_schema(method='delete', manual_parameters=[openapi.Parameter(
-    #     name='id', in_=openapi.IN_QUERY,
-    #     type=openapi.TYPE_STRING,
-    #     description="参数ID"
-    # )])
-    @action(detail=True, methods=['delete'])
+    @swagger_auto_schema(operation_description="删除用户信息",
+                         responses={404: 'not found'})
+    # @action(detail=True, methods=['delete'])
     @transaction.atomic
-    def delete(self, request, pk=None):
-
+    def destroy(self, request, pk=None):
         SysUser.objects.filter(id=pk).first().delete()
         return Response(status=status.HTTP_200_OK)
