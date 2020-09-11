@@ -119,13 +119,12 @@ class DjangoSession(models.Model):
 
 
 class SysUser(models.Model):
-    id = models.CharField(primary_key=True, max_length=20)
-    name = models.CharField(max_length=255)
-    title = models.CharField(max_length=255)
-    mobile = models.CharField(max_length=20)
-    email = models.CharField(max_length=255)
-    income = models.CharField(max_length=20)
-    create_date = models.DateTimeField()
+    name = models.CharField(max_length=255, blank=True, null=True)
+    title = models.CharField(max_length=255, blank=True, null=True)
+    mobile = models.CharField(max_length=20, blank=True, null=True)
+    email = models.CharField(max_length=255, blank=True, null=True)
+    income = models.CharField(max_length=20, blank=True, null=True)
+    create_date = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         managed = False

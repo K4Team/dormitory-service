@@ -1,22 +1,21 @@
 # -*- coding: utf-8 -*-
 import sys
 
-# from __future__ import unicode_literals
-from django.shortcuts import render
-from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from rest_framework.views import APIView
-import json
-from django.http import JsonResponse
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework import viewsets, status
+from rest_framework.views import Response
+from services.serializers import UserSerializer
 from services.models import SysUser
-import datetime
+import json
+
 
 def get_request_args(func):
     def _get_request_args(self, request):
         if request.method == 'GET':
             args = request.GET
         else:
-            body = request.body
+            body = request.body.decode("utf8")
             if body:
                 try:
                     args = json.loads(body)
@@ -31,32 +30,57 @@ def get_request_args(func):
     return _get_request_args
 
 
-# Create your views here.
-class GetOneNews(APIView):
-    '''
-    list:
-        Return one news
-    '''
-    test_param = openapi.Parameter("id", openapi.IN_QUERY, description="test manual param",
-                                   type=openapi.TYPE_INTEGER)
+class User(viewsets.ViewSet):
+    params = [{'name': 'id', 'desc': '参数ID', 'type': openapi.TYPE_INTEGER},
+              {'name': 'name', 'desc': '参数name', 'type': openapi.TYPE_STRING},
+              {'name': 'title', 'desc': '参数title', 'type': openapi.TYPE_STRING},
+              {'name': 'mobile', 'desc': '参数mobile', 'type': openapi.TYPE_STRING},
+              {'name': 'email', 'desc': '参数email', 'type': openapi.TYPE_STRING},
+              {'name': 'income', 'desc': '参数income', 'type': openapi.TYPE_STRING},
+              {'name': 'create_date', 'desc': '参数create_date', 'type': openapi.TYPE_STRING}]
 
-    @swagger_auto_schema(operation_description="partial_update description override",
-                         responses={404: 'id not found'},
-                         manual_parameters=[test_param])
-    @get_request_args
-    def get(self, request, args):
-        # sql = "SELECT id,name,title,mobile,email,income,create_date FROM sys_user"
-        # db = connection.cursor()
-        # db.execute(sql)
-        #
-        # desc = db.description
-        #
-        # data = list([dict(zip([de[0] for de in desc], row)) for row in db.fetchall()])
+    @swagger_auto_schema(operation_description="获取用户列表", responses={404: 'not found'}, manual_parameters=list(
+        openapi.Parameter(i['name'], openapi.IN_QUERY, description=i['desc'], type=i['type']) for i in params))
+    def list(self, request):
         data = SysUser.objects.all()
-        print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-        data_list = list(data.values())
-        # for i in data_list:
-        #     i.create_date.
-        # dataObject = data.
-        return JsonResponse({'data': data_list})
+        data_list = UserSerializer(data, many=True)
 
+        return Response(data_list.data, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(operation_description="获取用户信息",
+                         responses={404: 'not found'})
+    def retrieve(self, request, pk=None):
+        try:
+            data = SysUser.objects.get(id=pk)
+        except SysUser.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        info = UserSerializer(data)
+        return Response(info.data, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        operation_description="创建用户",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=["name", "title", "email"],
+            properties={
+                'id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                'name': openapi.Schema(type=openapi.TYPE_STRING),
+                'title': openapi.Schema(type=openapi.TYPE_STRING),
+                'mobile': openapi.Schema(type=openapi.TYPE_STRING),
+                'email': openapi.Schema(type=openapi.TYPE_STRING),
+                'income': openapi.Schema(type=openapi.TYPE_STRING),
+                'create_date': openapi.Schema(type=openapi.TYPE_STRING),
+            },
+        ),
+        security=[],
+        responses={404: 'not found'}
+    )
+    @get_request_args
+    def create(self, request, args):
+
+        a = SysUser.objects.create()
+        # for i in args.keys():
+        #     a.i
+        a.save()
+        # a.create_date = self.args['']
+        return Response(status=status.HTTP_200_OK)

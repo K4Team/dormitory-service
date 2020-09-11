@@ -20,6 +20,8 @@ from rest_framework import routers, permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
+router = routers.DefaultRouter()
+router.register('user', user.User, basename='user')
 
 
 schema_view = get_schema_view(
@@ -36,11 +38,7 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    path('api/', include('services.urls')),
-    # path('getUser/', user.UserList.getUser),
-    # path('^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-    # path('api/', include('dormitory.urls')),
-    # path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    path('', include(router.urls)),
     path('swagger', schema_view.with_ui('swagger', cache_timeout=0), name='2222'),
     # path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 ]
