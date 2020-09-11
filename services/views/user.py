@@ -6,32 +6,43 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets, status
 from rest_framework.views import Response
 from services.serializers import UserSerializer
+from rest_framework.decorators import action,api_view
 from services.models import SysUser
 import json
+import datetime
+from django.db import transaction
+import uuid
 
 
 def get_request_args(func):
-    def _get_request_args(self, request):
+    def _get_request_args(self, request, pk):
         if request.method == 'GET':
             args = request.GET
-        else:
+        elif request.method == 'POST' or request.method == "PUT":
             body = request.body.decode("utf8")
             if body:
                 try:
                     args = json.loads(body)
                 except Exception as e:
                     print(e)
+                    if request.method == 'POST':
+                        # return makeJsonResponse(status=StatusCode.EXECUTE_FAIL, message=str(e))
+                        args = request.POST
+                    else:
+                        args = request.PUT
+            else:
+                if request.method == 'POST':
                     # return makeJsonResponse(status=StatusCode.EXECUTE_FAIL, message=str(e))
                     args = request.POST
-            else:
-                args = request.POST
-        return func(self, request, args)
+                else:
+                    args = request.PUT
+        return func(self, request, args, pk)
 
     return _get_request_args
 
 
 class User(viewsets.ViewSet):
-    params = [{'name': 'id', 'desc': '参数ID', 'type': openapi.TYPE_INTEGER},
+    params = [{'name': 'id', 'desc': '参数ID', 'type': openapi.TYPE_STRING},
               {'name': 'name', 'desc': '参数name', 'type': openapi.TYPE_STRING},
               {'name': 'title', 'desc': '参数title', 'type': openapi.TYPE_STRING},
               {'name': 'mobile', 'desc': '参数mobile', 'type': openapi.TYPE_STRING},
@@ -63,7 +74,7 @@ class User(viewsets.ViewSet):
             type=openapi.TYPE_OBJECT,
             required=["name", "title", "email"],
             properties={
-                'id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                'id': openapi.Schema(type=openapi.TYPE_STRING),
                 'name': openapi.Schema(type=openapi.TYPE_STRING),
                 'title': openapi.Schema(type=openapi.TYPE_STRING),
                 'mobile': openapi.Schema(type=openapi.TYPE_STRING),
@@ -75,12 +86,63 @@ class User(viewsets.ViewSet):
         security=[],
         responses={404: 'not found'}
     )
+    @transaction.atomic
     @get_request_args
     def create(self, request, args):
 
         a = SysUser.objects.create()
         # for i in args.keys():
-        #     a.i
+        keys_list = args.keys()
+        a.id = uuid.uuid4()
+        a.name = args['name'] if 'name' in keys_list else None
+        a.title = args['title'] if 'title' in keys_list else None
+        a.mobile = args['mobile'] if 'mobile' in keys_list else None
+        a.email = args['email'] if 'email' in keys_list else None
+        a.income = args['income'] if 'income' in keys_list else None
+        a.create_date = datetime.datetime.now()
         a.save()
         # a.create_date = self.args['']
+        return Response(status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        operation_description="编辑用户",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=[],
+            properties={
+                'name': openapi.Schema(type=openapi.TYPE_STRING),
+                'title': openapi.Schema(type=openapi.TYPE_STRING),
+                'mobile': openapi.Schema(type=openapi.TYPE_STRING),
+                'email': openapi.Schema(type=openapi.TYPE_STRING),
+                'income': openapi.Schema(type=openapi.TYPE_STRING),
+            },
+        ),
+        security=[],
+        responses={404: 'not found'}
+    )
+    @transaction.atomic
+    @get_request_args
+    def update(self, request, args, pk):
+
+        user = SysUser.objects.filter(id=pk).first()
+        keys_list = args.keys()
+        user.name = args['name'] if 'name' in keys_list else user.name
+        user.title = args['title'] if 'title' in keys_list else user.title
+        user.mobile = args['mobile'] if 'mobile' in keys_list else user.mobile
+        user.email = args['email'] if 'email' in keys_list else user.email
+        user.income = args['income'] if 'income' in keys_list else user.income
+        user.save()
+        info = UserSerializer(user)
+        return Response(info.data, status=status.HTTP_200_OK)
+
+    # @swagger_auto_schema(method='delete', manual_parameters=[openapi.Parameter(
+    #     name='id', in_=openapi.IN_QUERY,
+    #     type=openapi.TYPE_STRING,
+    #     description="参数ID"
+    # )])
+    @action(detail=True, methods=['delete'])
+    @transaction.atomic
+    def delete(self, request, pk=None):
+
+        SysUser.objects.filter(id=pk).first().delete()
         return Response(status=status.HTTP_200_OK)
