@@ -28,11 +28,11 @@ ALLOWED_HOSTS = []
 
 # Application definition
 
-REST_FRAMEWORK = {
-
-    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.AutoSchema',
-
-}
+# REST_FRAMEWORK = {
+#
+#     'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.AutoSchema',
+#
+# }
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'services',
-    'rest_framework_swagger',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [

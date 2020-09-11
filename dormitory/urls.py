@@ -16,13 +16,31 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from services.views import user
-from rest_framework.schemas import get_schema_view
-from rest_framework_swagger.renderers import SwaggerUIRenderer, OpenAPIRenderer
+from rest_framework import routers, permissions
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
 
-schema_view = get_schema_view(title='services', renderer_classes=[SwaggerUIRenderer, OpenAPIRenderer])
+
+
+schema_view = get_schema_view(
+    openapi.Info(
+        title="系统API",
+        default_version='v1.0',
+        description="管理系统接口文档",
+        terms_of_service="www.baidu.com",
+        contact=openapi.Contact(email="1103376617@qq.com"),
+        license=openapi.License(name=""),
+    ),
+    public=True,
+    permission_classes=(permissions.AllowAny,)
+)
 
 urlpatterns = [
-
-    path('getUser/', user.getUser),
-    path('docs/', schema_view, name='swagger接口文档')
+    path('api/', include('services.urls')),
+    # path('getUser/', user.UserList.getUser),
+    # path('^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
+    # path('api/', include('dormitory.urls')),
+    # path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    path('swagger', schema_view.with_ui('swagger', cache_timeout=0), name='2222'),
+    # path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 ]
