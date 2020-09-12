@@ -6,11 +6,11 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets, status
 from rest_framework.views import Response
 from services.serializers import UserSerializer
-from rest_framework.decorators import action, api_view
 from services.models import SysUser
 import json
 import datetime
 from django.db import transaction
+from dormitory.settings import RESPONSE_INFO
 import uuid
 
 
@@ -50,23 +50,32 @@ class User(viewsets.ViewSet):
               {'name': 'income', 'desc': '参数income', 'type': openapi.TYPE_STRING},
               {'name': 'create_date', 'desc': '参数create_date', 'type': openapi.TYPE_STRING}]
 
-    @swagger_auto_schema(operation_description="获取用户列表", responses={404: 'not found'}, manual_parameters=list(
+    error_info = {'code': 400, 'message': "请求错误，请联系管理员！"}
+    success_info = {'code': 200, 'message': '请求成功'}
+
+    @swagger_auto_schema(operation_description="获取用户列表", responses=RESPONSE_INFO, manual_parameters=list(
         openapi.Parameter(i['name'], openapi.IN_QUERY, description=i['desc'], type=i['type']) for i in params))
     def list(self, request):
-        data = SysUser.objects.all()
+        try:
+            data = SysUser.objects.all()
+        except Exception as e:
+            print(e)
+            return Response(self.error_info, status=status.HTTP_400_BAD_REQUEST)
         data_list = UserSerializer(data, many=True)
-
-        return Response(data_list.data, status=status.HTTP_200_OK)
+        self.success_info['data'] = data_list.data
+        return Response(self.success_info, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(operation_description="获取用户信息",
-                         responses={404: 'not found'})
+                         responses=RESPONSE_INFO)
     def retrieve(self, request, pk=None):
         try:
             data = SysUser.objects.get(id=pk)
-        except SysUser.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            print(e)
+            return Response(self.error_info, status=status.HTTP_400_BAD_REQUEST)
         info = UserSerializer(data)
-        return Response(info.data, status=status.HTTP_200_OK)
+        self.success_info['data'] = info.data
+        return Response(self.success_info, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         operation_description="创建用户",
@@ -84,21 +93,24 @@ class User(viewsets.ViewSet):
             },
         ),
         security=[],
-        responses={404: 'not found'}
+        responses=RESPONSE_INFO
     )
     @transaction.atomic
     @get_request_args
     def create(self, request, args, pk):
 
         keys_list = args.keys()
-        SysUser.objects.create(id=uuid.uuid4(), name=args['name'] if 'name' in keys_list else None,
-                               title=args['title'] if 'title' in keys_list else None,
-                               mobile=args['mobile'] if 'mobile' in keys_list else None,
-                               email=args['email'] if 'email' in keys_list else None,
-                               income=args['income'] if 'income' in keys_list else None,
-                               create_date=datetime.datetime.now())
-
-        return Response(status=status.HTTP_200_OK)
+        try:
+            SysUser.objects.create(id=uuid.uuid4(), name=args['name'] if 'name' in keys_list else None,
+                                   title=args['title'] if 'title' in keys_list else None,
+                                   mobile=args['mobile'] if 'mobile' in keys_list else None,
+                                   email=args['email'] if 'email' in keys_list else None,
+                                   income=args['income'] if 'income' in keys_list else None,
+                                   create_date=datetime.datetime.now())
+        except Exception as e:
+            print(e)
+            return Response(self.error_info, status=status.HTTP_400_BAD_REQUEST)
+        return Response(self.success_info, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         operation_description="编辑用户",
@@ -114,27 +126,35 @@ class User(viewsets.ViewSet):
             },
         ),
         security=[],
-        responses={404: 'not found'}
+        responses=RESPONSE_INFO
     )
     @transaction.atomic
     @get_request_args
     def update(self, request, args, pk):
-
-        user = SysUser.objects.filter(id=pk).first()
-        keys_list = args.keys()
-        user.name = args['name'] if 'name' in keys_list else user.name
-        user.title = args['title'] if 'title' in keys_list else user.title
-        user.mobile = args['mobile'] if 'mobile' in keys_list else user.mobile
-        user.email = args['email'] if 'email' in keys_list else user.email
-        user.income = args['income'] if 'income' in keys_list else user.income
-        user.save()
+        try:
+            user = SysUser.objects.filter(id=pk).first()
+            keys_list = args.keys()
+            user.name = args['name'] if 'name' in keys_list else user.name
+            user.title = args['title'] if 'title' in keys_list else user.title
+            user.mobile = args['mobile'] if 'mobile' in keys_list else user.mobile
+            user.email = args['email'] if 'email' in keys_list else user.email
+            user.income = args['income'] if 'income' in keys_list else user.income
+            user.save()
+        except Exception as e:
+            print(e)
+            return Response(self.error_info, status=status.HTTP_400_BAD_REQUEST)
         info = UserSerializer(user)
-        return Response(info.data, status=status.HTTP_200_OK)
+        self.success_info['data'] = info.data
+        return Response(self.success_info, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(operation_description="删除用户信息",
-                         responses={404: 'not found'})
+                         responses=RESPONSE_INFO)
     # @action(detail=True, methods=['delete'])
     @transaction.atomic
     def destroy(self, request, pk=None):
-        SysUser.objects.filter(id=pk).first().delete()
-        return Response(status=status.HTTP_200_OK)
+        try:
+            SysUser.objects.filter(id=pk).first().delete()
+        except Exception as e:
+            print(e)
+            return Response(self.error_info, status=status.HTTP_400_BAD_REQUEST)
+        return Response(self.success_info, status=status.HTTP_200_OK)

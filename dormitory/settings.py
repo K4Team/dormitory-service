@@ -74,6 +74,14 @@ TEMPLATES = [
     },
 ]
 
+RESPONSE_INFO = {
+    200: '请求成功',
+    400:  '请求错误，请联系管理员！',
+    403: '没有当前权限',
+    404:    'NOT FOUND',
+    500: '服务器发生错误！'
+}
+
 WSGI_APPLICATION = 'dormitory.wsgi.application'
 
 # Database
