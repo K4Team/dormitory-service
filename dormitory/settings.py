@@ -54,6 +54,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'dormitory.utils.CheckToken'
 ]
 
 ROOT_URLCONF = 'dormitory.urls'
@@ -76,9 +77,9 @@ TEMPLATES = [
 
 RESPONSE_INFO = {
     200: '请求成功',
-    400:  '请求错误，请联系管理员！',
+    400: '请求错误，请联系管理员！',
     403: '没有当前权限',
-    404:    'NOT FOUND',
+    404: 'NOT FOUND',
     500: '服务器发生错误！'
 }
 
@@ -115,6 +116,20 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+# redis缓存配置
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "PASSWORD": "123456",  # redis配置的密码，如果没有，则删除该行
+            "COMPRESSOR": "django_redis.compressors.zlib.ZlibCompressor",
+            "IGNORE_EXCEPTIONS": True,
+        }
+    }
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/

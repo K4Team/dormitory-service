@@ -10,6 +10,7 @@ from services.models import SysUser
 import json
 import datetime
 from django.db import transaction
+from django.contrib.auth.hashers import make_password
 from dormitory.settings import RESPONSE_INFO
 import uuid
 
@@ -44,6 +45,7 @@ def get_request_args(func):
 class User(viewsets.ViewSet):
     params = [{'name': 'id', 'desc': '参数ID', 'type': openapi.TYPE_STRING},
               {'name': 'name', 'desc': '参数name', 'type': openapi.TYPE_STRING},
+              {'name': 'password', 'desc': '参数password', 'type': openapi.TYPE_STRING},
               {'name': 'title', 'desc': '参数title', 'type': openapi.TYPE_STRING},
               {'name': 'mobile', 'desc': '参数mobile', 'type': openapi.TYPE_STRING},
               {'name': 'email', 'desc': '参数email', 'type': openapi.TYPE_STRING},
@@ -81,11 +83,12 @@ class User(viewsets.ViewSet):
         operation_description="创建用户",
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
-            required=["name", "title", "email"],
+            required=["name", "email", "mobile", "password"],
             properties={
                 'id': openapi.Schema(type=openapi.TYPE_STRING),
                 'name': openapi.Schema(type=openapi.TYPE_STRING),
                 'title': openapi.Schema(type=openapi.TYPE_STRING),
+                'password': openapi.Schema(type=openapi.TYPE_STRING),
                 'mobile': openapi.Schema(type=openapi.TYPE_STRING),
                 'email': openapi.Schema(type=openapi.TYPE_STRING),
                 'income': openapi.Schema(type=openapi.TYPE_STRING),
@@ -104,6 +107,7 @@ class User(viewsets.ViewSet):
             SysUser.objects.create(id=uuid.uuid4(), name=args['name'] if 'name' in keys_list else None,
                                    title=args['title'] if 'title' in keys_list else None,
                                    mobile=args['mobile'] if 'mobile' in keys_list else None,
+                                   password=make_password(args['password']) if 'password' in keys_list else None,
                                    email=args['email'] if 'email' in keys_list else None,
                                    income=args['income'] if 'income' in keys_list else None,
                                    create_date=datetime.datetime.now())
@@ -121,6 +125,7 @@ class User(viewsets.ViewSet):
                 'name': openapi.Schema(type=openapi.TYPE_STRING),
                 'title': openapi.Schema(type=openapi.TYPE_STRING),
                 'mobile': openapi.Schema(type=openapi.TYPE_STRING),
+                'password': openapi.Schema(type=openapi.TYPE_STRING),
                 'email': openapi.Schema(type=openapi.TYPE_STRING),
                 'income': openapi.Schema(type=openapi.TYPE_STRING),
             },
@@ -135,6 +140,7 @@ class User(viewsets.ViewSet):
             user = SysUser.objects.filter(id=pk).first()
             keys_list = args.keys()
             user.name = args['name'] if 'name' in keys_list else user.name
+            user.password = args['password'] if 'password' in keys_list else user.password
             user.title = args['title'] if 'title' in keys_list else user.title
             user.mobile = args['mobile'] if 'mobile' in keys_list else user.mobile
             user.email = args['email'] if 'email' in keys_list else user.email
