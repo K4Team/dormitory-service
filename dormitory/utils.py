@@ -16,9 +16,7 @@ class CheckToken(MiddlewareMixin):
         # token验证
         try:
             url = request.path
-            if url == "/swagger":
-                return
-            if url == "/login":
+            if url == "/swagger" or url == "/login" :
                 return
             else:
                 token = request.META.get('unique_token')
