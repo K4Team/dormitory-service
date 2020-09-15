@@ -65,14 +65,14 @@ class Login(viewsets.ViewSet):
     def create(self, request, args, pk):
 
         try:
-            user = SysUser.objects.filter(mobile=args.mobile).first()
+            user = SysUser.objects.filter(mobile=args['mobile']).first()
         except Exception as e:
             print(e)
             self.error_info['message'] = "用户名或密码不正确！"
             return Response(self.error_info, status=status.HTTP_400_BAD_REQUEST)
-        if check_password(args.password, user.passsword):
+        if check_password(args['password'], user.password):
             info = UserSerializer(user)
-            token = Token.create_token(args.mobile, args.password)
+            token = Token.create_token(args['mobile'], args['password'])
             r.set('token', token, 1800)
             self.success_info['data'] = info.data
             self.success_info['token'] = token

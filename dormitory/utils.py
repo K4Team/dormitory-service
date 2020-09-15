@@ -16,9 +16,7 @@ class CheckToken(MiddlewareMixin):
         # token验证
         try:
             url = request.path
-            if url == "/swagger":
-                return
-            if url == "/login":
+            if url == "/swagger" or url == "/login/":
                 return
             else:
                 token = request.META.get('unique_token')
@@ -43,7 +41,8 @@ class Token:
 
     @staticmethod
     def create_token(mobile, password):
-        token = hashlib.md5(mobile + "-" + password + str(datetime.now())).hexdigest()
+        str1 = mobile + "-" + password + str(datetime.now())
+        token = hashlib.md5(str1.encode("utf8")).hexdigest()
         return token
 
     @staticmethod
