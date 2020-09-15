@@ -16,6 +16,7 @@ class CheckToken(MiddlewareMixin):
         # token验证
         try:
             url = request.path
+
             if url == "/swagger" or url == "/login/":
                 return
             else:
